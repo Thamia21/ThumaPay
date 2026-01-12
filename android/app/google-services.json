@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "768011264762",
+    "project_id": "thuma-mina-pay",
+    "storage_bucket": "thuma-mina-pay.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:768011264762:android:848f3286bfc552d2975f43",
+        "android_client_info": {
+          "package_name": "com.example.thuma_mina_pay"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBYGjzXtsWGa0Yw98oF2NfjKxNRt8PQX_s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

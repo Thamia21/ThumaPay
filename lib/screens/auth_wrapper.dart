@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:thuma_pay/screens/vendor/vendor_dashboard.dart';
 import '../services/auth_service.dart';
 import '../models/user_model.dart';
 import 'login_screen.dart';
-import 'home_screen.dart';
+import 'parent/parent_dashboard.dart';
 
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
@@ -18,6 +19,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
   User? _currentUser;
   UserModel? _userData;
   bool _isLoading = true;
+  bool _isEmailVerified = false;
+  bool _hasCheckedVerification = false;
 
   @override
   void initState() {
@@ -43,27 +46,44 @@ class _AuthWrapperState extends State<AuthWrapper> {
       if (mounted) {
         setState(() {
           _currentUser = user;
-          _isLoading = false; // Set loading to false immediately when auth state changes
         });
       }
       
-      if (user != null) {
+      if (user != null && !_hasCheckedVerification) {
+        debugPrint('🔄 Starting verification check for user: ${user.email}');
         try {
+          // Check email verification status
+          final isVerified = await _authService.checkEmailVerification();
+          debugPrint('🔄 Email verification result: $isVerified');
+          
           final userData = await _authService.getUserData(user.uid);
+          debugPrint('🔄 User data fetched: ${userData?.fullName}');
+          
           if (mounted) {
             setState(() {
+              _isEmailVerified = isVerified;
               _userData = userData;
+              _hasCheckedVerification = true; // Mark as completed
+              _isLoading = false; // Set loading to false after all data is loaded
             });
+            debugPrint('🔄 State updated - isVerified: $isVerified, hasChecked: true');
           }
         } catch (e) {
           debugPrint('Error fetching user data: $e');
-          // Don't set _userData to null, just log the error
-          // User can still proceed to home screen without Firestore data
+          if (mounted) {
+            setState(() {
+              _hasCheckedVerification = true; // Mark as completed even on error
+              _isLoading = false; // Set loading to false even on error
+            });
+          }
         }
-      } else {
+      } else if (user == null) {
         if (mounted) {
           setState(() {
             _userData = null;
+            _isEmailVerified = false;
+            _hasCheckedVerification = false; // Reset for new login attempts
+            _isLoading = false;
           });
         }
       }
@@ -101,13 +121,56 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
     
     if (_currentUser != null) {
-      // User is logged in, navigate to home screen
+      debugPrint('🔄 Build method - Current user: ${_currentUser?.email}');
+      debugPrint('🔄 Build method - Has checked verification: $_hasCheckedVerification');
+      debugPrint('🔄 Build method - Is verified: $_isEmailVerified');
+      
+      // Only proceed if verification check has completed
+      if (!_hasCheckedVerification) {
+        debugPrint('🔄 Build method - Showing verification loading screen');
+        return const Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 20),
+                Text('Verifying your account...'),
+              ],
+            ),
+          ),
+        );
+      }
+      
+      // Check if email is verified
+      if (!_isEmailVerified) {
+        // Sign out unverified user
+        debugPrint('🔄 Build method - User not verified, signing out');
+        _authService.signOut();
+        debugPrint('🔄 User not verified, signed out');
+        return const LoginScreen();
+      }
+
+      // User is logged in and verified, navigate to appropriate screen based on role
       // Use user data if available, otherwise use email display name
       String userName = _userData?.fullName ?? _currentUser?.displayName ?? _currentUser?.email?.split('@')[0] ?? 'User';
-      debugPrint('🔄 Redirecting to home screen with userName: $userName');
+      String userRole = _userData?.role ?? 'vendor'; // Default to vendor if no role
+      
+      debugPrint('🔄 User role: $userRole');
+      debugPrint('🔄 Redirecting to appropriate screen with userName: $userName');
       debugPrint('🔄 Current user: ${_currentUser?.email}');
       debugPrint('🔄 User data: ${_userData?.fullName}');
-      return HomeScreen(userName: userName);
+      
+      // Route based on user role
+      switch (userRole) {
+        case UserModel.parent:
+          return ParentDashboard(userModel: _userData);
+        case UserModel.vendor:
+          return const VendorDashboard();
+        case UserModel.admin:
+        default:
+          return ParentDashboard(userModel: _userData);
+      }
     }
     
     // User is not logged in or user data not available

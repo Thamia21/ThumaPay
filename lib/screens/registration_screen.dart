@@ -20,6 +20,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _acceptTerms = false;
 
   final AuthService _authService = AuthService();
 
@@ -57,6 +58,15 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
+    if (!_acceptTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please accept the Terms and Conditions'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -71,10 +81,13 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       );
       debugPrint('registerWithEmailAndPassword completed');
 
+      // Sign out the user so they need to verify email before logging in
+      await _authService.signOut();
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Registration successful! Please check your email for verification.'),
+            content: Text('Registration successful! Please check your email for verification and then sign in.'),
             backgroundColor: Colors.green,
           ),
         );
@@ -207,8 +220,17 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   if (value == null || value.isEmpty) {
                     return 'Please enter a password';
                   }
-                  if (value.length < 6) {
-                    return 'Password must be at least 6 characters';
+                  if (value.length < 8) {
+                    return 'Password must be at least 8 characters';
+                  }
+                  if (!RegExp(r'(?=.*[a-z])').hasMatch(value)) {
+                    return 'Password must contain at least one lowercase letter';
+                  }
+                  if (!RegExp(r'(?=.*[A-Z])').hasMatch(value)) {
+                    return 'Password must contain at least one uppercase letter';
+                  }
+                  if (!RegExp(r'(?=.*\d)').hasMatch(value)) {
+                    return 'Password must contain at least one number';
                   }
                   return null;
                 },
@@ -269,7 +291,41 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
+
+              // Terms and Conditions
+              Row(
+                children: [
+                  Checkbox(
+                    value: _acceptTerms,
+                    onChanged: (value) {
+                      setState(() {
+                        _acceptTerms = value ?? false;
+                      });
+                    },
+                  ),
+                  Expanded(
+                    child: RichText(
+                      text: const TextSpan(
+                        text: 'I agree to the ',
+                        style: TextStyle(color: Colors.black),
+                        children: [
+                          TextSpan(
+                            text: 'Terms and Conditions',
+                            style: TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
+                          ),
+                          TextSpan(text: ' and '),
+                          TextSpan(
+                            text: 'Privacy Policy',
+                            style: TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
 
               // Register Button
               ElevatedButton(

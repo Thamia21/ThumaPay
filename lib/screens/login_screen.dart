@@ -36,19 +36,32 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
+      debugPrint('🔄 Attempting login for: ${_emailController.text.trim()}');
       final userCredential = await _authService.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
+      debugPrint('🔄 Login successful, checking verification...');
 
-      // Check if email is verified
-      if (userCredential.user != null && !userCredential.user!.emailVerified) {
-        // Sign out the user since email is not verified
-        await _authService.signOut();
-        if (mounted) {
-          _showEmailVerificationDialog();
+      // Reload user to get latest verification status
+      if (userCredential.user != null) {
+        await userCredential.user!.reload();
+        debugPrint('🔄 User reloaded, email verified: ${userCredential.user!.emailVerified}');
+
+        // Check if email is verified
+        if (!userCredential.user!.emailVerified) {
+          debugPrint('🔄 Email not verified, showing SweetAlert');
+          if (mounted) {
+            debugPrint('🔄 Widget is mounted, calling _showEmailVerificationSweetAlert');
+            _showEmailVerificationSweetAlert();
+          } else {
+            debugPrint('🔄 Widget is not mounted, cannot show SweetAlert');
+          }
+          return;
         }
-        return;
+        debugPrint('🔄 Email verified, proceeding to dashboard');
+      } else {
+        debugPrint('🔄 User credential user is null');
       }
 
       if (mounted) {
@@ -117,48 +130,171 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _showEmailVerificationDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('Email Verification Required'),
-        content: const Text(
-          'Please verify your email address before logging in. Check your email for the verification link.',
+  void _showEmailVerificationSweetAlert() {
+    debugPrint('🔄 _showEmailVerificationSweetAlert called');
+    debugPrint('🔄 Context: $context');
+    try {
+      debugPrint('🔄 Attempting to show dialog');
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        barrierColor: Colors.black.withOpacity(0.5),
+        builder: (context) => Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: Colors.white,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Warning Icon
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade100,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.email_outlined,
+                    size: 40,
+                    color: Colors.orange.shade700,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Title
+                const Text(
+                  'Email Not Verified!',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                
+                // Message
+                Text(
+                  'Please verify your email address before logging in.',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey.shade700,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                
+                Text(
+                  'We sent a verification email to:\n${_emailController.text.trim()}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                
+                // Instructions
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    '✓ Check your inbox\n✓ Click the verification link\n✓ If you don\'t see it, check spam folder',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          side: BorderSide(color: Colors.grey.shade300),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          'Later',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          try {
+                            await _authService.resendEmailVerification();
+                            Navigator.of(context).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Verification email resent! Please check your email.'),
+                                backgroundColor: Colors.green,
+                                duration: Duration(seconds: 4),
+                              ),
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Failed to resend: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange.shade700,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          'Resend Email',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              try {
-                await _authService.resendEmailVerification();
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Verification email resent!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to resend: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('Resend Email'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
+      );
+      debugPrint('🔄 SweetAlert dialog shown successfully');
+    } catch (e) {
+      debugPrint('🔄 Error showing SweetAlert: $e');
+      // Fallback to simple SnackBar if dialog fails
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Email not verified! Please check your email.'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 5),
+        ),
+      );
+    }
   }
 
   @override

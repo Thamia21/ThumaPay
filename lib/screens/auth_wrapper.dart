@@ -56,7 +56,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
             });
           }
         } catch (e) {
-          print('Error fetching user data: $e');
+          debugPrint('Error fetching user data: $e');
           // Don't set _userData to null, just log the error
           // User can still proceed to home screen without Firestore data
         }
@@ -104,9 +104,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
       // User is logged in, navigate to home screen
       // Use user data if available, otherwise use email display name
       String userName = _userData?.fullName ?? _currentUser?.displayName ?? _currentUser?.email?.split('@')[0] ?? 'User';
-      print('🔄 Redirecting to home screen with userName: $userName');
-      print('🔄 Current user: ${_currentUser?.email}');
-      print('🔄 User data: ${_userData?.fullName}');
+      debugPrint('🔄 Redirecting to home screen with userName: $userName');
+      debugPrint('🔄 Current user: ${_currentUser?.email}');
+      debugPrint('🔄 User data: ${_userData?.fullName}');
       return HomeScreen(userName: userName);
     }
     

@@ -21,75 +21,81 @@ void main() async {
 class ThumaMinaPayApp extends StatelessWidget {
   const ThumaMinaPayApp({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    const primaryBlue = Color(0xFF2196F3);
-    const primaryBlueVariant = Color(0xFF2197F7);
+  static const primaryBlue = Color(0xFF2196F3);
+  static const primaryBlueVariant = Color(0xFF2197F7);
 
+  ThemeData _buildTheme(Brightness brightness) {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: primaryBlue,
-      brightness: Brightness.light,
+      brightness: brightness,
       primary: primaryBlue,
       secondary: primaryBlueVariant,
-      surface: const Color(0xFFF6F8FB),
-      surfaceContainerHigh: Colors.white,
+      surface: brightness == Brightness.light ? const Color(0xFFF6F8FB) : const Color(0xFF121212),
+      surfaceContainerHigh: brightness == Brightness.light ? Colors.white : const Color(0xFF1E1E1E),
       error: Colors.redAccent,
     );
 
-    return MaterialApp(
-      title: 'Thuma Mina Pay',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: colorScheme,
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: colorScheme,
 
-        // AppBar
-        appBarTheme: AppBarTheme(
-          centerTitle: true,
-          backgroundColor: colorScheme.primary,
-          foregroundColor: Colors.white,
-          elevation: 2,
-        ),
+      // AppBar
+      appBarTheme: AppBarTheme(
+        centerTitle: true,
+        backgroundColor: colorScheme.primary,
+        foregroundColor: Colors.white,
+        elevation: 2,
+      ),
 
-        // Filled buttons (Confirm, Deposit)
-        filledButtonTheme: FilledButtonThemeData(
-          style: FilledButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-            textStyle: const TextStyle(
-              fontWeight: FontWeight.w700,
-            ),
+      // Filled buttons (Confirm, Deposit)
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
           ),
-        ),
-
-        // Outlined buttons (Withdraw)
-        outlinedButtonTheme: OutlinedButtonThemeData(
-          style: OutlinedButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-            textStyle: const TextStyle(
-              fontWeight: FontWeight.w700,
-            ),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
           ),
-        ),
-
-        // Input fields
-        inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          filled: true,
-          fillColor: Colors.white,
-        ),
-
-        // Typography
-        textTheme: const TextTheme(
-          titleMedium: TextStyle(fontWeight: FontWeight.w700),
-          labelLarge: TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
+
+      // Outlined buttons (Withdraw)
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+
+      // Input fields
+      inputDecorationTheme: InputDecorationTheme(
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        filled: true,
+        fillColor: brightness == Brightness.light ? Colors.white : const Color(0xFF2A2A2A),
+      ),
+
+      // Typography
+      textTheme: const TextTheme(
+        titleMedium: TextStyle(fontWeight: FontWeight.w700),
+        labelLarge: TextStyle(fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Thuma Pay',
+      debugShowCheckedModeBanner: false,
+      theme: _buildTheme(Brightness.light),
+      darkTheme: _buildTheme(Brightness.dark),
+      themeMode: ThemeMode.system, // Supports system theme
       home: const AuthWrapper(),
     );
   }

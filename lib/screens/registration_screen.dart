@@ -16,7 +16,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  String _selectedRole = UserModel.PARENT;
+  String _selectedRole = UserModel.parent;
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -69,21 +69,32 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         fullName: _fullNameController.text.trim(),
         role: _selectedRole,
       );
-      print('registerWithEmailAndPassword completed');
+      debugPrint('registerWithEmailAndPassword completed');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Registration successful!'),
+            content: Text('Registration successful! Please check your email for verification.'),
             backgroundColor: Colors.green,
           ),
         );
+        // Navigate to login screen after showing message
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const LoginScreen(),
+              ),
+            );
+          }
+        });
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString()),
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
             backgroundColor: Colors.red,
           ),
         );
@@ -112,14 +123,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 20),
-              const Icon(
-                Icons.account_balance_wallet,
-                size: 80,
-                color: Colors.blue,
+              Image.asset(
+                'assets/logo.jpeg',
+                height: 80,
+                width: 80,
               ),
               const SizedBox(height: 20),
               const Text(
-                'Thuma Mina Pay',
+                'Thuma Pay',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 28,
@@ -243,7 +254,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   Expanded(
                     child: RadioListTile<String>(
                       title: const Text('Parent'),
-                      value: UserModel.PARENT,
+                      value: UserModel.parent,
                       groupValue: _selectedRole,
                       onChanged: _updateRole,
                     ),
@@ -251,7 +262,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   Expanded(
                     child: RadioListTile<String>(
                       title: const Text('Vendor'),
-                      value: UserModel.VENDOR,
+                      value: UserModel.vendor,
                       groupValue: _selectedRole,
                       onChanged: _updateRole,
                     ),

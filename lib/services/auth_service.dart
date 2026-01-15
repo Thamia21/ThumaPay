@@ -14,7 +14,7 @@ class AuthService {
       Firebase.app();
       return true;
     } catch (e) {
-      print('Firebase not initialized: $e');
+      debugPrint('Firebase not initialized: $e');
       return false;
     }
   }
@@ -37,7 +37,7 @@ class AuthService {
     }
     
     try {
-      print('Attempting to register user: $email');
+      debugPrint('Attempting to register user: $email');
       // Create user with Firebase Auth with timeout
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
@@ -48,7 +48,7 @@ class AuthService {
           throw Exception('Registration timed out. Please check your internet connection and try again.');
         },
       );
-      print('User created in Auth: [32m${userCredential.user!.uid}[0m');
+      debugPrint('User created in Auth: ${userCredential.user!.uid}');
 
       // Store user data in Firestore with timeout
       try {
@@ -63,9 +63,29 @@ class AuthService {
             throw Exception('Data storage timed out. Please check your internet connection.');
           },
         );
-        print('User document written in Firestore for UID: [32m${userCredential.user!.uid}[0m');
+        debugPrint('User document written in Firestore for UID: ${userCredential.user!.uid}');
+
+        // Send email verification
+        try {
+          debugPrint('Attempting to send email verification to: $email');
+          debugPrint('User email before verification: ${userCredential.user!.email}');
+          debugPrint('User emailVerified status: ${userCredential.user!.emailVerified}');
+          
+          await userCredential.user!.sendEmailVerification();
+          debugPrint('✅ Email verification sent successfully to: $email');
+        } catch (e) {
+          debugPrint('🔥 EMAIL VERIFICATION ERROR TYPE: ${e.runtimeType}');
+          debugPrint('🔥 EMAIL VERIFICATION ERROR: $e');
+          
+          if (e is FirebaseAuthException) {
+            debugPrint('🔥 Firebase Auth Error Code: ${e.code}');
+            debugPrint('🔥 Firebase Auth Error Message: ${e.message}');
+          }
+          
+          // Don't rethrow, as registration was successful
+        }
       } catch (e) {
-        print('Firestore write error: [31m$e[0m');
+        debugPrint('Firestore write error: $e');
         rethrow;
       }
 
@@ -73,7 +93,7 @@ class AuthService {
     } catch (e) {
       debugPrint('🔥 AUTH ERROR TYPE: ${e.runtimeType}');
       debugPrint('🔥 AUTH ERROR: $e');
-      rethrow;
+      throw _handleAuthError(e);
     }
   }
 
@@ -85,7 +105,7 @@ class AuthService {
     if (!isFirebaseInitialized) {
       throw Exception('Firebase not initialized. Please restart app.');
     }
-    
+
     try {
       return await _auth.signInWithEmailAndPassword(
         email: email,
@@ -94,7 +114,7 @@ class AuthService {
     } catch (e) {
       debugPrint('🔥 AUTH ERROR TYPE: ${e.runtimeType}');
       debugPrint('🔥 AUTH ERROR: $e');
-      rethrow;
+      throw _handleAuthError(e);
     }
   }
 
@@ -106,19 +126,19 @@ class AuthService {
     
     try {
       DocumentSnapshot doc = await _firestore.collection('users').doc(uid).get();
-      print('Firestore raw user doc: ${doc.data()}');
+      debugPrint('Firestore raw user doc: ${doc.data()}');
       if (doc.exists) {
         final data = doc.data();
         if (data is Map<String, dynamic>) {
           return UserModel.fromMap(uid, data);
         } else {
-          print('Firestore user data is not a Map<String, dynamic>: ${data.runtimeType}');
+          debugPrint('Firestore user data is not a Map<String, dynamic>: ${data.runtimeType}');
           throw Exception('Invalid user data format');
         }
       }
       return null;
     } catch (e) {
-      print('Exception when fetching user data from Firestore: $e');
+      debugPrint('Exception when fetching user data from Firestore: $e');
       throw Exception('Failed to get user data: $e');
     }
   }
@@ -141,6 +161,54 @@ class AuthService {
     }
   }
 
+  // Check email verification status
+  Future<bool> checkEmailVerification() async {
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        // Reload user to get latest verification status
+        await user.reload();
+        debugPrint('Email verification status for ${user.email}: ${user.emailVerified}');
+        return user.emailVerified;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Error checking email verification: $e');
+      return false;
+    }
+  }
+
+  // Resend email verification
+  Future<void> resendEmailVerification() async {
+    try {
+      final user = _auth.currentUser;
+      if (user != null && !user.emailVerified) {
+        debugPrint('Sending email verification to: ${user.email}');
+        debugPrint('User UID: ${user.uid}');
+        debugPrint('Is email verified: ${user.emailVerified}');
+        
+        await user.sendEmailVerification();
+        debugPrint('Email verification sent successfully to: ${user.email}');
+      } else {
+        if (user == null) {
+          throw Exception('No user signed in');
+        } else {
+          throw Exception('Email already verified for: ${user.email}');
+        }
+      }
+    } catch (e) {
+      debugPrint('🔥 EMAIL VERIFICATION ERROR TYPE: ${e.runtimeType}');
+      debugPrint('🔥 EMAIL VERIFICATION ERROR: $e');
+      
+      if (e is FirebaseAuthException) {
+        debugPrint('🔥 Firebase Auth Error Code: ${e.code}');
+        debugPrint('🔥 Firebase Auth Error Message: ${e.message}');
+      }
+      
+      throw Exception('Failed to resend verification email: $e');
+    }
+  }
+
   // Handle authentication errors
 Exception _handleAuthError(dynamic error) {
   if (error is FirebaseAuthException) {
@@ -150,11 +218,13 @@ Exception _handleAuthError(dynamic error) {
       case 'email-already-in-use':
         return Exception('An account already exists for this email.');
       case 'user-not-found':
-        return Exception('No user found for this email.');
+        return Exception('No account found with this email address.');
       case 'wrong-password':
-        return Exception('Wrong password provided.');
+        return Exception('Incorrect password. Please try again.');
+      case 'invalid-credential':
+        return Exception('Invalid credentials. Please check your email and password.');
       case 'invalid-email':
-        return Exception('The email address is not valid.');
+        return Exception('Please enter a valid email address.');
       case 'user-disabled':
         return Exception('This user account has been disabled.');
       case 'too-many-requests':

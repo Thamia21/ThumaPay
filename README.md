@@ -1,4 +1,4 @@
-# Thuma Mina Pay
+# Thuma Pay
 
 A digital payment application built with Flutter and Firebase Authentication, featuring role-based access for Parents and Vendors.
 

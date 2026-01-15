@@ -18,8 +18,14 @@ class DefaultFirebaseOptions {
   /// Default [FirebaseOptions] for the current platform.
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions are not supported for this platform.',
+      return const FirebaseOptions(
+        apiKey: 'AIzaSyBYGjzXtsWGa0Yw98oF2NfjKxNRt8PQX_s',
+        appId: '1:768011264762:web:848f3286bfc552d2975f43',
+        messagingSenderId: '768011264762',
+        projectId: 'thuma-mina-pay',
+        authDomain: 'thuma-mina-pay.firebaseapp.com',
+        storageBucket: 'thuma-mina-pay.firebasestorage.app',
+        measurementId: 'G-XXXXXXXXXX',
       );
     }
     return const FirebaseOptions(

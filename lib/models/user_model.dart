@@ -47,15 +47,15 @@ class UserModel {
     } else if (timestamp is int) {
       return DateTime.fromMillisecondsSinceEpoch(timestamp);
     } else {
-      log('Unrecognized timestamp type: ${timestamp?.runtimeType?.toString() ?? 'null'}');
+      log('Unrecognized timestamp type: ${timestamp?.runtimeType.toString() ?? 'null'}');
       return DateTime.now(); // fallback
     }
   }
 
   // User roles enum
-  static const String PARENT = 'parent';
-  static const String VENDOR = 'vendor';
-  static const String ADMIN = 'admin';
+  static const String parent = 'parent';
+  static const String vendor = 'vendor';
+  static const String admin = 'admin';
 
-  static List<String> get availableRoles => [PARENT, VENDOR];
+  static List<String> get availableRoles => [parent, vendor];
 }

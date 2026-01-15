@@ -120,7 +120,7 @@ class _WalletScreenState extends State<WalletScreen> {
             'Total Available Balance',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
               fontWeight: FontWeight.w600,
               letterSpacing: 0.2,
             ),
@@ -165,7 +165,7 @@ class _WalletScreenState extends State<WalletScreen> {
                 child: FilledButton.icon(
                   style: FilledButton.styleFrom(
                     foregroundColor: Colors.white,
-                    backgroundColor: Colors.white.withOpacity(0.15),
+                    backgroundColor: Colors.white.withValues(alpha: 0.15),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -189,7 +189,7 @@ class _WalletScreenState extends State<WalletScreen> {
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(
-                      color: Colors.white.withOpacity(0.65),
+                      color: Colors.white.withValues(alpha: 0.65),
                       width: 1.2,
                     ),
                     foregroundColor: Colors.white,
@@ -232,7 +232,7 @@ class _WalletScreenState extends State<WalletScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -260,7 +260,7 @@ class _WalletScreenState extends State<WalletScreen> {
           _Labeled(
             label: 'Transfer From',
             child: DropdownButtonFormField<String>(
-              value: _fromAccount,
+              initialValue: _fromAccount,
               items: _balances.keys
                   .map(
                     (e) => DropdownMenuItem(
@@ -296,7 +296,7 @@ class _WalletScreenState extends State<WalletScreen> {
             child: Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.08),
+                color: theme.colorScheme.primary.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -313,7 +313,7 @@ class _WalletScreenState extends State<WalletScreen> {
           _Labeled(
             label: 'Transfer To',
             child: DropdownButtonFormField<String>(
-              value: _toAccount,
+              initialValue: _toAccount,
               items: _balances.keys
                   .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                   .toList(),
@@ -374,7 +374,7 @@ class _WalletScreenState extends State<WalletScreen> {
         final color = item.incoming ? Colors.green : theme.colorScheme.error;
         return ListTile(
           leading: CircleAvatar(
-            backgroundColor: color.withOpacity(0.12),
+            backgroundColor: color.withValues(alpha: 0.12),
             child: Icon(
               item.incoming
                   ? Icons.arrow_downward_rounded
@@ -388,8 +388,7 @@ class _WalletScreenState extends State<WalletScreen> {
           ),
           subtitle: Text(item.date),
           trailing: Text(
-            (item.incoming ? '+ ' : '- ') +
-                'R ${item.amount.toStringAsFixed(2)}',
+            '${item.incoming ? '+ ' : '- '}R ${item.amount.toStringAsFixed(2)}',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: color,
               fontWeight: FontWeight.w700,

@@ -36,10 +36,20 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      await _authService.signInWithEmailAndPassword(
+      final userCredential = await _authService.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
+
+      // Check if email is verified
+      if (userCredential.user != null && !userCredential.user!.emailVerified) {
+        // Sign out the user since email is not verified
+        await _authService.signOut();
+        if (mounted) {
+          _showEmailVerificationDialog();
+        }
+        return;
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -59,7 +69,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString()),
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
             backgroundColor: Colors.red,
           ),
         );
@@ -86,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       await _authService.resetPassword(_emailController.text.trim());
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -107,6 +117,50 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _showEmailVerificationDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Email Verification Required'),
+        content: const Text(
+          'Please verify your email address before logging in. Check your email for the verification link.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              try {
+                await _authService.resendEmailVerification();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Verification email resent!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to resend: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Resend Email'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -122,10 +176,10 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 40),
-              const Icon(
-                Icons.account_balance_wallet,
-                size: 80,
-                color: Colors.blue,
+              Image.asset(
+                'assets/logo.jpeg',
+                height: 80,
+                width: 80,
               ),
               const SizedBox(height: 20),
               const Text(
@@ -139,7 +193,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 10),
               const Text(
-                'Sign in to your Thuma Mina Pay account',
+                'Sign in to your Thuma Pay account',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,

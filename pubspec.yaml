@@ -1,5 +1,5 @@
-name: thuma_mina_pay
-description: Thuma Mina Pay - Digital payment application with role-based authentication
+name: thuma_pay
+description: Thuma Pay - Digital payment application with role-based authentication
 publish_to: "none"
 version: 1.0.0+1
 
@@ -26,3 +26,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/

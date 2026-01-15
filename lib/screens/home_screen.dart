@@ -29,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: _currentIndex == 1
           ? null
           : AppBar(
-              title: const Text('Thuma Mina Pay'),
+              title: const Text('Thuma Pay'),
               actions: [
                 IconButton(
                   icon: const Icon(Icons.logout),

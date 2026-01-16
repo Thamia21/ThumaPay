@@ -1,6 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+class Transaction {
+  final String title;
+  final double amount;
+  final bool incoming;
+  final DateTime date;
+  final String? sourceAccount;
+  final String? destinationAccount;
+
+  const Transaction({
+    required this.title,
+    required this.amount,
+    required this.incoming,
+    required this.date,
+    this.sourceAccount,
+    this.destinationAccount,
+  });
+
+  String get formattedAmount {
+    final prefix = incoming ? '+ ' : '- ';
+    return '$prefix R ${amount.toStringAsFixed(2)}';
+  }
+
+  String get formattedDate {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+    
+    if (difference.inDays == 0) {
+      return 'Today';
+    } else if (difference.inDays == 1) {
+      return 'Yesterday';
+    } else if (difference.inDays < 7) {
+      return '${date.day}/${date.month}';
+    } else {
+      return '${date.day}/${date.month}/${date.year.toString().substring(2)}';
+    }
+  }
+
+  Transaction copyWith({
+    String? title,
+    double? amount,
+    bool? incoming,
+    DateTime? date,
+    String? sourceAccount,
+    String? destinationAccount,
+  }) {
+    return Transaction(
+      title: title ?? this.title,
+      amount: amount ?? this.amount,
+      incoming: incoming ?? this.incoming,
+      date: date ?? this.date,
+      sourceAccount: sourceAccount ?? this.sourceAccount,
+      destinationAccount: destinationAccount ?? this.destinationAccount,
+    );
+  }
+}
+
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
 
@@ -21,23 +77,68 @@ class _WalletScreenState extends State<WalletScreen> {
     'Sibusiso Pocket Money': 24500.90,
   };
 
-  // Mock recent transactions
-  final List<_TxnItem> _recent = const [
-    _TxnItem(title: 'Deposit', amount: 1500.00, incoming: true, date: 'Today'),
-    _TxnItem(
-      title: 'Internal Transfer',
-      amount: 250.00,
-      incoming: false,
-      date: 'Yesterday',
-    ),
-    _TxnItem(title: 'Refund', amount: 120.00, incoming: true, date: 'Jan 02'),
-    _TxnItem(
-      title: 'Withdrawal',
-      amount: 600.00,
-      incoming: false,
-      date: 'Jan 01',
-    ),
-  ];
+  // Recent transactions list - limited to 10 for performance
+  List<Transaction> _recentTransactions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeMockTransactions();
+  }
+
+  void _initializeMockTransactions() {
+    final now = DateTime.now();
+    setState(() {
+      _recentTransactions = [
+        Transaction(
+          title: 'Deposit',
+          amount: 1500.00,
+          incoming: true,
+          date: now.subtract(const Duration(hours: 2)),
+        ),
+        Transaction(
+          title: 'Internal Transfer',
+          amount: 250.00,
+          incoming: false,
+          date: now.subtract(const Duration(days: 1)),
+          sourceAccount: 'My Wallet',
+          destinationAccount: 'Senzo Pocket Money',
+        ),
+        Transaction(
+          title: 'Deposit',
+          amount: 120.00,
+          incoming: true,
+          date: now.subtract(const Duration(days: 2)),
+        ),
+        Transaction(
+          title: 'Withdrawal',
+          amount: 600.00,
+          incoming: false,
+          date: now.subtract(const Duration(days: 3)),
+        ),
+        Transaction(
+          title: 'Internal Transfer',
+          amount: 750.00,
+          incoming: true,
+          date: now.subtract(const Duration(days: 5)),
+          sourceAccount: 'Senzo Pocket Money',
+          destinationAccount: 'My Wallet',
+        ),
+        Transaction(
+          title: 'Deposit',
+          amount: 320.50,
+          incoming: true,
+          date: now.subtract(const Duration(days: 7)),
+        ),
+        Transaction(
+          title: 'Internal Transfer',
+          amount: 180.00,
+          incoming: false,
+          date: now.subtract(const Duration(days: 10)),
+        ),
+      ];
+    });
+  }
 
   @override
   void dispose() {
@@ -54,18 +155,72 @@ class _WalletScreenState extends State<WalletScreen> {
     return _parsedAmount > 0 && _fromAccount != _toAccount;
   }
 
+  void _showAccountSelectorBottomSheet({
+    required String title,
+    required String selectedAccount,
+    required String? excludeAccount,
+    required Function(String) onAccountSelected,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => _AccountSelectorBottomSheet(
+        title: title,
+        accounts: _balances,
+        selectedAccount: selectedAccount,
+        excludeAccount: excludeAccount,
+        onAccountSelected: onAccountSelected,
+      ),
+    );
+  }
+
   void _onConfirm() {
     // In production, trigger transfer flow here
+    final amount = _parsedAmount;
+    final now = DateTime.now();
+    
+    // Create two transactions for the transfer
+    final outgoingTransaction = Transaction(
+      title: 'Internal Transfer',
+      amount: amount,
+      incoming: false,
+      date: now,
+      sourceAccount: _fromAccount,
+      destinationAccount: _toAccount,
+    );
+    
+    final incomingTransaction = Transaction(
+      title: 'Internal Transfer',
+      amount: amount,
+      incoming: true,
+      date: now,
+      sourceAccount: _fromAccount,
+      destinationAccount: _toAccount,
+    );
+    
+    setState(() {
+      // Add new transactions to the top of the list
+      _recentTransactions.insert(0, outgoingTransaction);
+      _recentTransactions.insert(1, incomingTransaction);
+      
+      // Keep only the last 10 transactions for performance
+      if (_recentTransactions.length > 10) {
+        _recentTransactions = _recentTransactions.take(10).toList();
+      }
+      
+      _amountController.clear();
+    });
+    
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Transferring R ${_parsedAmount.toStringAsFixed(2)} from $_fromAccount to $_toAccount',
+          'Transferring R ${amount.toStringAsFixed(2)} from $_fromAccount to $_toAccount',
         ),
       ),
     );
-    setState(() {
-      _amountController.clear();
-    });
   }
 
   @override
@@ -259,33 +414,17 @@ class _WalletScreenState extends State<WalletScreen> {
           // Transfer From
           _Labeled(
             label: 'Transfer From',
-            child: DropdownButtonFormField<String>(
-              initialValue: _fromAccount,
-              items: _balances.keys
-                  .map(
-                    (e) => DropdownMenuItem(
-                      value: e,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(e),
-                          Text(
-                            'R ${_balances[e]!.toStringAsFixed(2)}',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (v) =>
-                  setState(() => _fromAccount = v ?? _fromAccount),
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                isDense: true,
+            child: _AccountSelector(
+              selectedAccount: _fromAccount,
+              onTap: () => _showAccountSelectorBottomSheet(
+                title: 'Select source account',
+                selectedAccount: _fromAccount,
+                excludeAccount: _toAccount,
+                onAccountSelected: (account) {
+                  setState(() => _fromAccount = account);
+                },
               ),
+              theme: theme,
             ),
           ),
 
@@ -312,16 +451,17 @@ class _WalletScreenState extends State<WalletScreen> {
           // Transfer To
           _Labeled(
             label: 'Transfer To',
-            child: DropdownButtonFormField<String>(
-              initialValue: _toAccount,
-              items: _balances.keys
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                  .toList(),
-              onChanged: (v) => setState(() => _toAccount = v ?? _toAccount),
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                isDense: true,
+            child: _AccountSelector(
+              selectedAccount: _toAccount,
+              onTap: () => _showAccountSelectorBottomSheet(
+                title: 'Select destination account',
+                selectedAccount: _toAccount,
+                excludeAccount: _fromAccount,
+                onAccountSelected: (account) {
+                  setState(() => _toAccount = account);
+                },
               ),
+              theme: theme,
             ),
           ),
 
@@ -366,38 +506,302 @@ class _WalletScreenState extends State<WalletScreen> {
   }
 
   Widget _buildRecentTransactions(ThemeData theme) {
+    if (_recentTransactions.isEmpty) {
+      return _buildEmptyState(theme);
+    }
+    
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
+      itemCount: _recentTransactions.length,
+      separatorBuilder: (_, __) => Divider(
+        height: 1,
+        color: theme.colorScheme.outline.withValues(alpha: 0.2),
+      ),
       itemBuilder: (context, index) {
-        final item = _recent[index];
-        final color = item.incoming ? Colors.green : theme.colorScheme.error;
-        return ListTile(
-          leading: CircleAvatar(
-            backgroundColor: color.withValues(alpha: 0.12),
-            child: Icon(
-              item.incoming
-                  ? Icons.arrow_downward_rounded
-                  : Icons.arrow_upward_rounded,
-              color: color,
-            ),
-          ),
-          title: Text(
-            item.title,
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-          subtitle: Text(item.date),
-          trailing: Text(
-            '${item.incoming ? '+ ' : '- '}R ${item.amount.toStringAsFixed(2)}',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w700,
+        final transaction = _recentTransactions[index];
+        final color = transaction.incoming 
+            ? const Color(0xFF2E7D32) 
+            : theme.colorScheme.error;
+            
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              // Optional: Show transaction details
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              leading: CircleAvatar(
+                backgroundColor: color.withValues(alpha: 0.12),
+                child: Icon(
+                  transaction.incoming
+                      ? Icons.arrow_downward_rounded
+                      : Icons.arrow_upward_rounded,
+                  color: color,
+                  size: 20,
+                ),
+              ),
+              title: Text(
+                transaction.title,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(
+                transaction.formattedDate,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              trailing: Text(
+                transaction.formattedAmount,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ),
         );
       },
-      separatorBuilder: (_, __) => const Divider(height: 1),
-      itemCount: _recent.length,
+    );
+  }
+  
+  Widget _buildEmptyState(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        children: [
+          Icon(
+            Icons.receipt_long_outlined,
+            size: 64,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No recent transactions',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Your transaction history will appear here',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AccountSelector extends StatelessWidget {
+  final String selectedAccount;
+  final VoidCallback onTap;
+  final ThemeData theme;
+
+  const _AccountSelector({
+    required this.selectedAccount,
+    required this.onTap,
+    required this.theme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          filled: true,
+          fillColor: theme.colorScheme.surface,
+          isDense: true,
+          suffixIcon: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.account_balance_wallet_outlined,
+              color: theme.colorScheme.primary,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                selectedAccount,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AccountSelectorBottomSheet extends StatelessWidget {
+  final String title;
+  final Map<String, double> accounts;
+  final String selectedAccount;
+  final String? excludeAccount;
+  final Function(String) onAccountSelected;
+
+  const _AccountSelectorBottomSheet({
+    required this.title,
+    required this.accounts,
+    required this.selectedAccount,
+    this.excludeAccount,
+    required this.onAccountSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final availableAccounts = accounts.keys
+        .where((account) => account != excludeAccount)
+        .toList();
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.7,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // Title
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              title,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Account list
+          Flexible(
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              shrinkWrap: true,
+              itemCount: availableAccounts.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final account = availableAccounts[index];
+                final isSelected = account == selectedAccount;
+                final balance = accounts[account]!;
+
+                return Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      onAccountSelected(account);
+                      Navigator.of(context).pop();
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: isSelected
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.outline.withValues(alpha: 0.2),
+                          width: isSelected ? 2 : 1,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        color: isSelected
+                            ? theme.colorScheme.primary.withValues(alpha: 0.08)
+                            : theme.colorScheme.surface,
+                      ),
+                      child: Row(
+                        children: [
+                          // Wallet icon
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                                  : theme.colorScheme.primary.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.account_balance_wallet_outlined,
+                              color: theme.colorScheme.primary,
+                              size: 20,
+                            ),
+                          ),
+
+                          const SizedBox(width: 12),
+
+                          // Account info
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  account,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'R ${balance.toStringAsFixed(2)}',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Checkmark for selected account
+                          if (isSelected)
+                            Icon(
+                              Icons.check_circle_rounded,
+                              color: theme.colorScheme.primary,
+                              size: 24,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // Safe area padding
+          SizedBox(height: MediaQuery.of(context).padding.bottom),
+        ],
+      ),
     );
   }
 }
@@ -426,17 +830,4 @@ class _Labeled extends StatelessWidget {
       ],
     );
   }
-}
-
-class _TxnItem {
-  final String title;
-  final double amount;
-  final bool incoming;
-  final String date;
-  const _TxnItem({
-    required this.title,
-    required this.amount,
-    required this.incoming,
-    required this.date,
-  });
 }

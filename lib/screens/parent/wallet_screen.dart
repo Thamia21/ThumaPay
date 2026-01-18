@@ -74,7 +74,8 @@ class _WalletScreenState extends State<WalletScreen> {
   final Map<String, double> _balances = {
     'My Wallet': 12450.00,
     'Senzo Pocket Money': 5300.25,
-    'Sibusiso Pocket Money': 24500.90,
+    'Amara Pocket Money': 24500.90,
+    'Kaelo Pocket Money': 500.90,
   };
 
   // Recent transactions list - limited to 10 for performance
@@ -135,6 +136,8 @@ class _WalletScreenState extends State<WalletScreen> {
           amount: 180.00,
           incoming: false,
           date: now.subtract(const Duration(days: 10)),
+          sourceAccount: 'My Wallet',
+          destinationAccount: 'Amara Pocket Money',
         ),
       ];
     });
@@ -178,8 +181,71 @@ class _WalletScreenState extends State<WalletScreen> {
   }
 
   void _onConfirm() {
-    // In production, trigger transfer flow here
     final amount = _parsedAmount;
+    
+    // Show confirmation dialog
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+        
+        return AlertDialog(
+          backgroundColor: isDark ? theme.colorScheme.surface : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            'Confirm Transfer',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: isDark ? theme.colorScheme.onSurface : Colors.black87,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Transfer Details:',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? theme.colorScheme.onSurface.withOpacity(0.7) : Colors.grey.shade600,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildDetailRow('From', _fromAccount, context),
+              _buildDetailRow('To', _toAccount, context),
+              _buildDetailRow('Amount', 'R ${amount.toStringAsFixed(2)}', context),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _executeTransfer(amount);
+              },
+              child: const Text('Confirm'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _executeTransfer(double amount) {
     final now = DateTime.now();
     
     // Create two transactions for the transfer
@@ -214,11 +280,118 @@ class _WalletScreenState extends State<WalletScreen> {
       _amountController.clear();
     });
     
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Transferring R ${amount.toStringAsFixed(2)} from $_fromAccount to $_toAccount',
-        ),
+    // Show success dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+        
+        return Dialog(
+          backgroundColor: isDark ? theme.colorScheme.surface : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Success Icon
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade100,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.check_rounded,
+                    color: Colors.green.shade600,
+                    size: 32,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // Success Title
+                Text(
+                  'Transfer Complete!',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? theme.colorScheme.onSurface : Colors.black87,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                
+                // Success Message
+                Text(
+                  'Successfully transferred R ${amount.toStringAsFixed(2)}\nfrom $_fromAccount to $_toAccount',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? theme.colorScheme.onSurface.withOpacity(0.7) : Colors.grey.shade600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                
+                // OK Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green.shade600,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'OK',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color: isDark ? theme.colorScheme.onSurface.withOpacity(0.6) : Colors.grey.shade600,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: isDark ? theme.colorScheme.onSurface : Colors.black87,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -226,12 +399,13 @@ class _WalletScreenState extends State<WalletScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final surface = theme.colorScheme.surface;
     final onSurface = theme.colorScheme.onSurface;
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      appBar: AppBar(title: const Text('Wallet'), centerTitle: true),
+      backgroundColor: isDark ? theme.scaffoldBackgroundColor : surface,
+      appBar: _buildAppBar(context),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         child: Column(
@@ -245,6 +419,7 @@ class _WalletScreenState extends State<WalletScreen> {
               'Recent Transactions',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
+                color: isDark ? theme.colorScheme.onSurface : Colors.black87,
               ),
             ),
             const SizedBox(height: 8),
@@ -255,8 +430,41 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    return AppBar(
+      backgroundColor: isDark ? theme.scaffoldBackgroundColor : Colors.white,
+      elevation: 0,
+      centerTitle: true,
+      title: Column(
+        children: [
+          Text(
+            'Wallet',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: isDark ? theme.colorScheme.onSurface : Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'Main wallet',
+            style: TextStyle(
+              fontSize: 12,
+              color: isDark ? theme.colorScheme.onSurface.withOpacity(0.7) : Colors.grey.shade600,
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHeroCard(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       decoration: BoxDecoration(
@@ -266,6 +474,13 @@ class _WalletScreenState extends State<WalletScreen> {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -506,6 +721,8 @@ class _WalletScreenState extends State<WalletScreen> {
   }
 
   Widget _buildRecentTransactions(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    
     if (_recentTransactions.isEmpty) {
       return _buildEmptyState(theme);
     }
@@ -514,52 +731,120 @@ class _WalletScreenState extends State<WalletScreen> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: _recentTransactions.length,
-      separatorBuilder: (_, __) => Divider(
-        height: 1,
-        color: theme.colorScheme.outline.withValues(alpha: 0.2),
-      ),
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final transaction = _recentTransactions[index];
-        final color = transaction.incoming 
-            ? const Color(0xFF2E7D32) 
-            : theme.colorScheme.error;
+        
+        // Determine transaction type and colors
+        Color backgroundColor;
+        IconData iconData;
+        Color iconColor;
+        String transactionTitle = transaction.title;
+        
+        if (transaction.title == 'Deposit') {
+          backgroundColor = Colors.green.withOpacity(0.1);
+          iconData = Icons.arrow_downward_rounded;
+          iconColor = Colors.green.shade600;
+        } else if (transaction.title == 'Internal Transfer') {
+          backgroundColor = Colors.blue.withOpacity(0.1);
+          iconData = Icons.swap_horiz_rounded;
+          iconColor = Colors.blue.shade600;
+          transactionTitle = transaction.incoming 
+              ? 'Transfer from ${transaction.sourceAccount}'
+              : 'Transfer to ${transaction.destinationAccount}';
+        } else if (transaction.title == 'Withdrawal') {
+          backgroundColor = Colors.red.withOpacity(0.1);
+          iconData = Icons.arrow_upward_rounded;
+          iconColor = Colors.red.shade600;
+        } else {
+          // Default styling for other transaction types
+          backgroundColor = Colors.grey.withOpacity(0.1);
+          iconData = Icons.receipt_long_rounded;
+          iconColor = Colors.grey.shade600;
+        }
             
-        return Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {
-              // Optional: Show transaction details
-            },
-            borderRadius: BorderRadius.circular(8),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              leading: CircleAvatar(
-                backgroundColor: color.withValues(alpha: 0.12),
-                child: Icon(
-                  transaction.incoming
-                      ? Icons.arrow_downward_rounded
-                      : Icons.arrow_upward_rounded,
-                  color: color,
-                  size: 20,
-                ),
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? theme.colorScheme.surface : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-              title: Text(
-                transaction.title,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              subtitle: Text(
-                transaction.formattedDate,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              trailing: Text(
-                transaction.formattedAmount,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w700,
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () {
+                // Optional: Show transaction details
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    // Left Side (Icon Container)
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: backgroundColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        iconData,
+                        color: iconColor,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    
+                    // Center (Details Column)
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            transactionTitle,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? theme.colorScheme.onSurface : Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _getTransactionSubtitle(transaction),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? theme.colorScheme.onSurface.withOpacity(0.7) : Colors.grey.shade600,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            transaction.formattedDate,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isDark ? theme.colorScheme.onSurface.withOpacity(0.5) : Colors.grey.shade500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    // Right Side (Amount)
+                    Text(
+                      transaction.formattedAmount,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: iconColor,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -568,8 +853,23 @@ class _WalletScreenState extends State<WalletScreen> {
       },
     );
   }
+
+  String _getTransactionSubtitle(Transaction transaction) {
+    if (transaction.title == 'Internal Transfer') {
+      if (transaction.sourceAccount != null && transaction.destinationAccount != null) {
+        return '${transaction.sourceAccount} → ${transaction.destinationAccount}';
+      }
+    } else if (transaction.title == 'Deposit') {
+      return 'External Account → Main Wallet';
+    } else if (transaction.title == 'Withdrawal') {
+      return 'Main Wallet → External Account';
+    }
+    return 'Main Wallet';
+  }
   
   Widget _buildEmptyState(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Container(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -577,21 +877,23 @@ class _WalletScreenState extends State<WalletScreen> {
           Icon(
             Icons.receipt_long_outlined,
             size: 64,
-            color: theme.colorScheme.onSurfaceVariant,
+            color: isDark ? theme.colorScheme.onSurface.withOpacity(0.4) : Colors.grey.shade400,
           ),
           const SizedBox(height: 16),
           Text(
             'No recent transactions',
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            style: TextStyle(
+              fontSize: 16,
+              color: isDark ? theme.colorScheme.onSurface.withOpacity(0.6) : Colors.grey.shade600,
               fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Your transaction history will appear here',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+            style: TextStyle(
+              fontSize: 14,
+              color: isDark ? theme.colorScheme.onSurface.withOpacity(0.5) : Colors.grey.shade500,
             ),
             textAlign: TextAlign.center,
           ),

@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
+import '../../services/child_service.dart';
+import '../../models/child_model.dart';
 import 'wallet_screen.dart';
 import 'qr_scan_screen.dart';
 import 'transaction_screen.dart';
 import 'profile_screen.dart';
+import 'send_money_dialog.dart';
+import 'deposit_bottom_sheet.dart';
+import 'children_list_screen.dart';
+import 'allowance_calendar_screen.dart';
 
 class ParentDashboard extends StatefulWidget {
   const ParentDashboard({super.key, this.userModel});
@@ -23,7 +29,40 @@ class ParentUserData {
 
 class _ParentDashboardState extends State<ParentDashboard> {
   final AuthService _authService = AuthService();
+  final ChildService _childService = ChildService();
   int _currentIndex = 0;
+  List<ChildModel> _children = [];
+  bool _isLoadingChildren = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadChildren();
+  }
+
+  Future<void> _loadChildren() async {
+    final user = _authService.currentUser;
+    if (user != null) {
+      try {
+        final children = await _childService.getChildren(user.uid);
+        if (mounted) {
+          setState(() {
+            _children = children;
+            _isLoadingChildren = false;
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _isLoadingChildren = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to load children: $e')),
+          );
+        }
+      }
+    }
+  }
 
   Future<void> _signOut() async {
     try {
@@ -306,7 +345,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
                   title: 'Deposit',
                   subtitle: 'Add funds',
                   color: const Color(0xFF2196F3),
-                  onTap: () {},
+                  onTap: _showDepositBottomSheet,
                 ),
               ),
             ],
@@ -565,7 +604,18 @@ class _ParentDashboardState extends State<ParentDashboard> {
   }
 
   void _sendMoney() {
-    _showDialog('Coming Soon', 'Send Money feature will be available soon!');
+    final user = _authService.currentUser;
+    if (user != null) {
+      showDialog(
+        context: context,
+        builder: (context) => SendMoneyDialog(
+          parentId: user.uid,
+          children: _children,
+        ),
+      );
+    } else {
+      _showDialog('Error', 'Please sign in to send money.');
+    }
   }
 
   void _viewTransactions() {
@@ -575,11 +625,30 @@ class _ParentDashboardState extends State<ParentDashboard> {
   }
 
   void _manageChildren() {
-    _showDialog('Coming Soon', 'Manage Children feature will be available soon!');
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const ChildrenListScreen(),
+      ),
+    );
   }
 
   void _setAllowances() {
-    _showDialog('Coming Soon', 'Set Allowances feature will be available soon!');
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const AllowanceCalendarScreen(),
+      ),
+    );
+  }
+
+  void _showDepositBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => const DepositBottomSheet(),
+    );
   }
 
   void _showDialog(String title, String content) {

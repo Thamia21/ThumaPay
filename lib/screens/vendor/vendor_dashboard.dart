@@ -203,22 +203,6 @@ class _VendorDashboardState extends State<VendorDashboard> {
     );
   }
 
-  Widget _buildWalletTab() {
-    return const WalletScreen();
-  }
-
-  Widget _buildScanQRTab() {
-    return const QrScanScreen();
-  }
-
-  Widget _buildTransactionsTab() {
-    return const TransactionScreen();
-  }
-
-  Widget _buildProfileTab() {
-    return const ProfileScreen();
-  }
-
   Widget _buildActionCard({
     required String title,
     required IconData icon,

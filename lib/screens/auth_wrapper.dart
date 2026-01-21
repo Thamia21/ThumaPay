@@ -163,13 +163,13 @@ class _AuthWrapperState extends State<AuthWrapper> {
       
       // Route based on user role
       switch (userRole) {
-        case UserModel.parent:
-          return ParentDashboard(userModel: _userData);
-        case UserModel.vendor:
+        case 'parent':
+          return ParentDashboard(userModel: null);  // Simplified: pass null for now
+        case 'vendor':
           return const VendorDashboard();
-        case UserModel.admin:
+        case 'admin':
         default:
-          return ParentDashboard(userModel: _userData);
+          return ParentDashboard(userModel: null);  // Simplified: pass null for now
       }
     }
     

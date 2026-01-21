@@ -247,7 +247,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
             'Main wallet & child accounts',
             style: TextStyle(
               fontSize: 12,
-              color: isDark ? theme.colorScheme.onSurface.withOpacity(0.7) : Colors.grey.shade600,
+              color: isDark ? theme.colorScheme.onSurface.withValues(alpha: 0.7) : Colors.grey.shade600,
               fontWeight: FontWeight.normal,
             ),
           ),
@@ -358,7 +358,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: isSelected ? theme.colorScheme.primary.withOpacity(0.1) : (isDark ? theme.colorScheme.surface : Colors.grey.shade200),
+                color: isSelected ? theme.colorScheme.primary.withValues(alpha: 0.1) : (isDark ? theme.colorScheme.surface : Colors.grey.shade200),
                 shape: BoxShape.circle,
                 border: isSelected ? Border.all(color: theme.colorScheme.primary, width: 2) : null,
               ),

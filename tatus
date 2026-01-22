@@ -1,0 +1,68 @@
+[33mcommit 646f5d64f0f58f2225b76ea0af10394d4678e0ce[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mMerchant_update[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/Merchant_update[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m
+Merge: def6b64 be351bc
+Author: Thamia21 <166250797+Thamia21@users.noreply.github.com>
+Date:   Mon Jan 19 09:27:59 2026 +0200
+
+    Merge pull request #3 from Thamia21/Wallet_screen
+    
+     wallet screen update
+
+[33mcommit be351bce400bd4fac1bf2c172ffad1c965ab260e[m[33m ([m[1;31morigin/Wallet_screen[m[33m)[m
+Author: AustenHamon <168131488+AustenHamon@users.noreply.github.com>
+Date:   Sun Jan 18 20:34:29 2026 +0200
+
+     wallet screen update
+
+[33mcommit def6b6498acc1c56ef63bd1c2b41bdbf45e49674[m
+Merge: e79f17a de7f735
+Author: AustenHamon <168131488+AustenHamon@users.noreply.github.com>
+Date:   Sun Jan 18 18:23:57 2026 +0200
+
+    Merge pull request #2 from Thamia21/transaction_screen
+    
+    Transaction screen update
+
+[33mcommit de7f735bf7b9ce466dfe072a735a547f8235cd85[m[33m ([m[1;31morigin/transaction_screen[m[33m)[m
+Author: AustenHamon <168131488+AustenHamon@users.noreply.github.com>
+Date:   Sun Jan 18 18:19:51 2026 +0200
+
+    Transaction screen update
+
+[33mcommit e79f17a3b08118aecb2dcefac8edf35c6bf870cf[m
+Merge: b690365 e87c4f5
+Author: AustenHamon <168131488+AustenHamon@users.noreply.github.com>
+Date:   Sun Jan 18 14:17:00 2026 +0200
+
+    Merge pull request #1 from Thamia21/Transaction
+    
+    Bottom sheet for account selection
+
+[33mcommit e87c4f5e1ed5bc96d4e23056523415ed78373cb9[m
+Author: AustenHamon <168131488+AustenHamon@users.noreply.github.com>
+Date:   Fri Jan 16 10:25:47 2026 +0200
+
+    Bottom sheet for account selection
+
+[33mcommit b690365b1e5f70f0e31fa791ef6cc2fd23d673c7[m
+Author: Thamia21 <thamiakeneilwe1@gmail.com>
+Date:   Thu Jan 15 21:27:12 2026 +0200
+
+    ThumaPay Template with Authentication
+
+[33mcommit 776d08eeca2a159d71f77a5bb910358e6d850c86[m
+Author: Thamia21 <thamiakeneilwe1@gmail.com>
+Date:   Thu Jan 15 09:16:14 2026 +0200
+
+    added verification
+
+[33mcommit 4df46736edab8e8bf89b0aba75930127eca66ae0[m
+Author: AustenHamon <168131488+AustenHamon@users.noreply.github.com>
+Date:   Wed Jan 14 10:23:46 2026 +0200
+
+    Thuma pay template
+
+[33mcommit 9d43f1d5f59b47216174671efcefd269e449a5cd[m
+Author: AustenHamon <austinhamon071@gmail.com>
+Date:   Mon Jan 12 09:50:20 2026 +0200
+
+    Added my code updates for thumaMina

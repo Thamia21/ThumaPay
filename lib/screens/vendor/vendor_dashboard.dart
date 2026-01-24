@@ -254,7 +254,7 @@ class _VendorDashboardState extends State<VendorDashboard> {
         onTap: _onBottomNavTap,
         backgroundColor: Colors.blue,
         selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white70,
+        unselectedItemColor: const Color.fromARGB(179, 26, 4, 228)omARGB(179, 58, 7, 242),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.qr_code_scanner),

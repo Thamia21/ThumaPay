@@ -544,7 +544,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      _getAmountPrefix(transaction) + 'R ${transaction.amount.toStringAsFixed(2)}',
+                      '${_getAmountPrefix(transaction)}R ${transaction.amount.toStringAsFixed(2)}',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -682,7 +682,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
     IconData iconData;
 
     if (_selectedWalletFilter == 'Child Wallets' && _selectedChildFilter != 'All Children') {
-      message = 'No transactions for ${_selectedChildFilter}';
+      message = 'No transactions for $_selectedChildFilter';
       iconData = Icons.account_balance_wallet_outlined;
     } else {
       message = 'No transactions yet';
